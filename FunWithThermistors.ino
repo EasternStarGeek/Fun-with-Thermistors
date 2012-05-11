@@ -2,19 +2,19 @@
 /*
 Project Description:
  
- This project is a Template for all projects made using the Home School Shield.  
- The first thing you should do is to save this project to another name, and then
- put your own comments in this space.  It is always a good idea to document your projects!
+ This project illustrates a simple method of measuring temperature with an Arduino and NTC Thermistor.
+ The Thermistor used for this project is sold by Adafruit Industries:
+ http://www.adafruit.com/products/372
+ and has a resistance of 10K ohms at 25 degrees C.  It is used in a simple voltage divider circuit.
  
- This project has been divided into five clearly marked areas:
- 1. Pre-processor Definitions
- 2. Variable Declarations
- 3. Setup Procedure
- 4. Loop Procedure
- 5. Function Area
+ Since the response is non-linear, a lookup table is used.  The values in the LUT are the predicted
+ values of the Analog to Digital converter at every temperature between -20 and +69 degrees C.
  
- You may not need all the areas for your project, but maintaining the template structure 
- will help keep your projects well-organized.
+ The LUT has been derived from the manufacturer's published resistance table with the help of an
+ Excel spreadsheet.
+ 
+ The LUT table approach offers the advantage of higher processing speed
+ 
  */
 
 
@@ -22,27 +22,8 @@ Project Description:
 // #################### PRE-PROCESSOR DEFINITIONS #################################
 // ################################################################################
 
-// Give symbolic names to all Home School Shield device Pin Connections:
-#define pinS1 A2
-#define pinPB1 8
-#define pinPB2 4
-#define pinPot A0
-#define pinLDR A3
+
 #define pinTherm A4
-#define pinLED1 7
-#define pinLED2 11
-#define pinRelay 2
-#define pinNPN1H 3
-#define pinNPN2H 10
-#define pinNPN3 5
-#define pinNPN4 6
-#define pinServo 9
-
-
-// ################################################################################
-// ######################## LOOKUP TABLE DECLARATIONS #############################
-// ################################################################################
-
 
 
 // ################################################################################
@@ -50,20 +31,11 @@ Project Description:
 // ################################################################################
 
 // Example:  Declare variables to hold the value of the analog input devices:
-int potValue;
-int LDRValue;
 
 float tempF;
 float tempC;
 
 unsigned long millisPrev;
-
-// Example:  Declare variables to hold the state of the digital input devices:
-boolean PB1State;
-boolean PB2State;
-boolean S1State;
-
-boolean edgePB1;
 
 // ################################################################################
 // ######################## SETUP PROCEDURE #######################################
@@ -72,25 +44,7 @@ boolean edgePB1;
 void setup() {
   // This is the Setup part of your project. This is for code that is run only ONCE at startup.
 
-  // Homeschool Shield I/O Pin Modes
-  // Warning!  Make no changes to Pin Modes!
-  pinMode(pinS1, INPUT);
-  pinMode(pinPB1, INPUT);
-  pinMode(pinPB2, INPUT);
-  pinMode(pinPot, INPUT);
-  pinMode(pinLDR, INPUT);
   pinMode(pinTherm, INPUT);
-
-  pinMode(pinLED1, OUTPUT);
-  pinMode(pinLED2, OUTPUT);
-  pinMode(pinRelay, OUTPUT);
-  pinMode(pinNPN1H, OUTPUT);
-  pinMode(pinNPN2H, OUTPUT);
-  pinMode(pinNPN3, OUTPUT);
-  pinMode(pinServo, OUTPUT); 
-  // End Home School Shield Pin Modes
-
-  // Add more Setup tasks if needed...
   analogReference(EXTERNAL);
   Serial.begin(115200);
 
@@ -104,19 +58,6 @@ void setup() {
 
 void loop() {
   // This is the main part of your project.  Put all continuously running code here:
-
-  // Example: Get the instantaneous value from the three analog input devices
-  potValue = analogRead(pinPot);
-  LDRValue = analogRead(pinLDR);
-  
-
-  // Example: Get the instantaneous states of the three input switches.
-  // Because of the nature of the external circuitry used, all switches on the 
-  // Home School Shield will return a Logic-0 when they are in the
-  // actuated state, so the negation operator (!) must be used.
-  PB1State = !digitalRead(pinPB1);  
-  PB2State = !digitalRead(pinPB2);
-  S1State = !digitalRead(pinS1);
 
 if (millis() > millisPrev + 2000) {
   
@@ -139,8 +80,6 @@ if (millis() > millisPrev + 2000) {
 // ################################################################################
 // ##################### OUTBOARD FUNCTIONS #######################################
 // ################################################################################
-
-// If you are using your own Functions, put 'em here!
 
 float getThermTemp (int thermPin)  {
   
@@ -171,7 +110,7 @@ int ADC_Hi;
 int Temp_Lo;
 int Temp_Hi;
 
-
+// get raw ADC value from Thermistor voltage divider circuit
 int thermValue = analogRead(thermPin);
 
 // Sensor Data bounds check
