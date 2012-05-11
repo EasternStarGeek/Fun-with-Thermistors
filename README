@@ -1,5 +1,23 @@
-this project explains how to use thermistors to measure temperature, using the
-Arduino platform.  The method shown is executes quickly, using a lookup table
+######################################
+EasternStarGeek
+http://easternstargeek.blogspot.com
+######################################
+
+
+This project explains how to use thermistors to measure temperature, using the
+Arduino platform.  
+
+The method shown executes quickly, using a lookup table
 with interpolation for greater precision.
+
+The thermistor used in this example is a 
+3950 NTC,  10K @ 25 Deg Celsius
+
+Product ID 372
+available from:
+ADAFRUIT INDUSTRIES
+www.adafruit.com
+
+
 
 

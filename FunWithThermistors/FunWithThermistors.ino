@@ -13,9 +13,7 @@ Project Description:
  The LUT has been derived from the manufacturer's published resistance table with the help of an
  Excel spreadsheet.
  
- The LUT table approach offers the advantage of higher processing speed
- 
- */
+  */
 
 
 // ################################################################################
