@@ -1,0 +1,5 @@
+this project explains how to use thermistors to measure temperature, using the
+Arduino platform.  The method shown is executes quickly, using a lookup table
+with interpolation for greater precision.
+
+
