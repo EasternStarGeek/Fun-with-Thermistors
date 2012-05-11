@@ -18,6 +18,22 @@ available from:
 ADAFRUIT INDUSTRIES
 www.adafruit.com
 
+Files in this repository:
+
+(Folder) FunWithThermistors:  Folder containing Arduino Sketch
+103_3950_lookuptable.pdf:  Resistance/Temperature chart provided by mfr.
+README:  This file
+ThermistorCircuit.pdf:  Printout of annotated schematic (KiCad)
+
+Spreadsheets:
+A Helper Spreadsheet was created for generating the ADC lookup table
+used in the Arduino sketch.  Also included are some x-y plots showing the
+Resistance and ADC values versus temperature.  You have also the ability to change
+the value of the reference resistor, as well as the excitation and reference voltages
+Two versions have been provided:
+
+ThermistorSpreadsheet.xls:  Microsoft Excel format (old)
+ThermistorSpreadsheet.ods:  OpenDocuments spreadsheet format
 
 
 
