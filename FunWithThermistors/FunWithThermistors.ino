@@ -13,27 +13,36 @@ Project Description:
  The LUT has been derived from the manufacturer's published resistance table with the help of an
  Excel spreadsheet.
  
+ Concepts developed and demonstrated here:
+ 1. Using a Lookup Table (LUT)
+ 2. Interpolating between LUT entries for greater precision
+ 3. How to do a running average, or "Low-Pass Filter" in quasi real-time
+ 4. How to limit the resolution to match the limitations of the system
+ 
  */
-
 
 // ################################################################################
 // #################### PRE-PROCESSOR DEFINITIONS #################################
 // ################################################################################
 
-
 #define pinTherm A4
+#define printInterval 3000
 
 
 // ################################################################################
 // ######################## VARIABLE DECLARATIONS #################################
 // ################################################################################
 
-// Example:  Declare variables to hold the value of the analog input devices:
-
-float tempF;
 float tempC;
+float tempF;
+float avgTempF;
+float avgTempC;
+
+boolean initLPF = 1;  // Flag used to initialize the Low Pass Filter
 
 unsigned long millisPrev;
+unsigned long millisPrevPrint = -printInterval;
+
 
 // ################################################################################
 // ######################## SETUP PROCEDURE #######################################
@@ -42,11 +51,10 @@ unsigned long millisPrev;
 void setup() {
   // This is the Setup part of your project. This is for code that is run only ONCE at startup.
 
-  pinMode(pinTherm, INPUT);
-  analogReference(EXTERNAL);
-  Serial.begin(115200);
-
-
+  pinMode(pinTherm, INPUT);  // Set Pin Mode of the Analog thermistor input
+  analogReference(EXTERNAL); // Use the voltage appearing at AREF pin as the ADC reference
+  Serial.begin(9600);
+  
 }  // END Setup Procedure
 
 
@@ -57,9 +65,9 @@ void setup() {
 void loop() {
   // This is the main part of your project.  Put all continuously running code here:
 
-  if (millis() > millisPrev + 2000) {
+  if (millis() > millisPrev + 1000) {  // Take a temperature reading every second
 
-    tempC = getThermTemp(pinTherm); 
+    tempC = getTempFloat(pinTherm);  // Get instantaneous temperature reading in deg C
 
     if (tempC > 998)
       Serial.println("Error: Sensor reading over range!");
@@ -67,14 +75,33 @@ void loop() {
       Serial.println("Error: Sensor reading under range!");
     else {
 
-      tempC = tempC + 1.65;  // Calibration offset
-      tempF = (tempC * 1.8) + 32;
+      tempC = tempC + 1.0;  // Calibration offset by empirical measurement
+      
+      // tempC = resDull(tempC);  // Optional function to limit resolution to 0.5 deg C
+      
+      tempF = (tempC * 1.8) + 32;  // convert instantaneous deg C reading to deg Fahrenheit
 
-      Serial.print("TempC: ");
-      Serial.print(tempC);
-      Serial.print("  TempF: ");
-      Serial.println(tempF);
-
+      avgTempC = LPF(tempC, 20, initLPF);  // Get LPF average reading over 20 samples
+      initLPF = 0;  // Discard the initialization flag after the first reading is recorded
+      
+      avgTempF = (avgTempC * 1.8) + 32;  // convert average deg C to deg Fahrenheit
+    
+      
+      if (millis() > millisPrevPrint + printInterval) {  // print out the readings
+        Serial.print("Instantaneous Temperature Readings:  ");
+        Serial.print(tempC, 2);
+        Serial.print(" degC, ");
+        Serial.print(tempF, 2);
+        Serial.println(" degF");
+        
+        Serial.print("      Average Temperature Readings:  ");
+        Serial.print(avgTempC, 1);
+        Serial.print(" degC,  ");
+        Serial.print(avgTempF, 1);
+        Serial.println(" degF");
+        Serial.println();
+        millisPrevPrint = millis();
+      }
     }
     millisPrev = millis();  
   }
@@ -83,78 +110,8 @@ void loop() {
 }  // END Loop Procedure
 
 
-// ################################################################################
-// ##################### OUTBOARD FUNCTIONS #######################################
-// ################################################################################
-
-float getThermTemp (int thermPin)  {
-
-  /* The following lookup table contains the predicted ADC values for -20 deg C to + 69 deg C
-   in a Voltage Divider Circuit with Ra=Thermistor and Rb=10K.
-   +Vref---[Thermistor]---+--[10K]---GND
-   |
-   ADC @ thermPin
-   
-   ADC = 1023 * 10000/(Rtherm+10000)
-   ADC Values were externally calculated from the Thermistor Resistance Table
-   */
-  const int LUT_Therm[90] = {
-    105, 110, 116, 121, 127, 133, 139, 145, 152, 159,   // -20C to -11C 
-    165, 173, 180, 187, 195, 203, 211, 219, 227, 236,   // -10C to -1C 
-    245, 254, 264, 273, 283, 293, 303, 313, 324, 334,   //  0C  to +9C 
-    345, 355, 366, 377, 388, 399, 410, 422, 433, 444,   //  10C to 19C 
-    455, 467, 478, 489, 500, 512, 523, 534, 545, 555,   //  20C to 29C 
-    566, 577, 588, 598, 608, 619, 629, 639, 648, 658,   //  30C to 39C 
-    667, 677, 686, 695, 704, 712, 721, 729, 737, 745,   //  40C to 49C 
-    753, 760, 768, 775, 782, 789, 795, 802, 808, 814,   //  50C to 59C 
-    820, 826, 832, 837, 843, 848, 853, 858, 863, 867    //  60C to 69C 
-  };
-
-  float tempC;
-  int ADC_Lo;
-  int ADC_Hi;
-  int Temp_Lo;
-  int Temp_Hi;
-
-  // get raw ADC value from Thermistor voltage divider circuit
-  int thermValue = analogRead(thermPin);
-
-  // Sensor Data bounds check
-  if (thermValue < LUT_Therm[0]) 
-    tempC = -999;  // Under-range dummy value
-  else if (thermValue > LUT_Therm[89])
-    tempC = 999;  // Over-range dummy value
-  else {
-
-    // if Sensor Value is within range...
-    for (int i=0; i <= 89; i++){
-      if (LUT_Therm[i] > thermValue) {  // Look for a match in the lookup table
-        int ADC_Hi = LUT_Therm[i];
-        int Temp_Hi = i - 20;
-
-        if (i != 0)  {
-          int ADC_Lo = LUT_Therm[i-1];
-          int Temp_Lo = i - 21;
-        }
-        else  {
-          ADC_Lo = LUT_Therm[i];
-          Temp_Lo = i - 20;
-        }
-
-        // Interpolate the temperature value for greater precision
-        tempC = float( map(thermValue, ADC_Lo, ADC_Hi, Temp_Lo*100, Temp_Hi*100) )/100;
-
-        break;  // exit for-next loop after the match is detected
-      }
-    }
-  }
-  return (tempC);
-}
 
 
-
-
-// END Outboard Function Area
 
 
 
