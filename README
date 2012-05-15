@@ -3,6 +3,13 @@ EasternStarGeek
 http://easternstargeek.blogspot.com
 ######################################
 
+-------------------------------------------
+New and Improved as of 15 May, 2012!
+Added a running averaging (LPF) function with no wait states
+Added a resolution-dulling function
+Cleaned up with better comments
+-------------------------------------------
+
 
 This project explains how to use thermistors to measure temperature, using the
 Arduino platform.  
